@@ -1,0 +1,950 @@
+{
+  "info": {
+    "_postman_id": "4df38ae6-460b-4f83-91a4-6cf1e5169e9b",
+    "name": "Vaak Extract API",
+    "description": "Import this collection into Postman. Use the LOCAL or PROD environment, then run requests top-to-bottom. Several requests automatically save response values into environment variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{TOKEN}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.request.headers.upsert({ key: 'Accept', value: 'application/json' });"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "LOCAL",
+      "item": [
+        {
+          "name": "01 Health Check",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/healthz",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "healthz"
+              ]
+            },
+            "description": "Checks that the Vaak API service is running."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('service is healthy', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().ok).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 Voice Model Spec",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/voice-model/spec",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "voice-model",
+                "spec"
+              ]
+            }
+          }
+        },
+        {
+          "name": "03 Model Quality",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/models/quality",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "models",
+                "quality"
+              ]
+            }
+          }
+        },
+        {
+          "name": "04 Create Principal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"principal_id\": \"{{PRINCIPAL_ID}}\",\n  \"controller_id\": \"{{CONTROLLER_ID}}\",\n  \"display_name\": \"{{DISPLAY_NAME}}\",\n  \"identity_class\": \"developer_agent\",\n  \"persona\": {\n    \"role\": \"demo\",\n    \"tone\": \"calm\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/principals",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "principals"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.principal_id) pm.environment.set('PRINCIPAL_ID', body.principal_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 Open Voice Enrollment",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/principals/{{PRINCIPAL_ID}}/voice/enrollment",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "principals",
+                "{{PRINCIPAL_ID}}",
+                "voice",
+                "enrollment"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.session_id) pm.environment.set('ENROLL_SESSION_ID', body.session_id);",
+                  "if (body.challenge) pm.environment.set('CHALLENGE', body.challenge);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06 Complete Voice Enrollment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_id\": \"{{ENROLL_SESSION_ID}}\",\n  \"audio_b64\": \"{{DEMO_AUDIO_B64}}\",\n  \"spoken_challenge\": \"{{CHALLENGE}}\",\n  \"languages\": [\"en\"]\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/principals/{{PRINCIPAL_ID}}/voice/enrollment/complete",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "principals",
+                "{{PRINCIPAL_ID}}",
+                "voice",
+                "enrollment",
+                "complete"
+              ]
+            },
+            "description": "Replace DEMO_AUDIO_B64 with real recorded audio for non-demo verification."
+          }
+        },
+        {
+          "name": "07 Create Default Envelope",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/principals/{{PRINCIPAL_ID}}/envelope/default",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "principals",
+                "{{PRINCIPAL_ID}}",
+                "envelope",
+                "default"
+              ]
+            }
+          }
+        },
+        {
+          "name": "08 Open Live Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mode\": \"external_agent\",\n  \"channel\": \"local\",\n  \"register\": \"private\",\n  \"language\": \"en\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/principals/{{PRINCIPAL_ID}}/live",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "principals",
+                "{{PRINCIPAL_ID}}",
+                "live"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.session_id) pm.environment.set('SESSION_ID', body.session_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "09 Render Disclosure",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"You are speaking with an AI-generated voice operating under authorized Vaak identity and policy controls.\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/sessions/{{SESSION_ID}}/disclosure/render",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "sessions",
+                "{{SESSION_ID}}",
+                "disclosure",
+                "render"
+              ]
+            }
+          }
+        },
+        {
+          "name": "10 Confirm Disclosure",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delivery_evidence\": \"demo-disclosure-confirmed\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/sessions/{{SESSION_ID}}/disclosure/confirm",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "sessions",
+                "{{SESSION_ID}}",
+                "disclosure",
+                "confirm"
+              ]
+            }
+          }
+        },
+        {
+          "name": "11 Speak",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Hello, my name is Onkar Gaikwad and I am an AI engineer.\",\n  \"prosody\": {\n    \"warmth\": 0.7,\n    \"urgency\": 0.1,\n    \"dominance\": 0.1\n  },\n  \"agency\": {\n    \"intent\": \"inform\",\n    \"influence_intensity\": 0.0\n  }\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/sessions/{{SESSION_ID}}/speak",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "sessions",
+                "{{SESSION_ID}}",
+                "speak"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.audio_b64) pm.environment.set('LAST_AUDIO_B64', body.audio_b64);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12 Session Attestation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nonce\": \"postman-demo-nonce\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/sessions/{{SESSION_ID}}/attest",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "sessions",
+                "{{SESSION_ID}}",
+                "attest"
+              ]
+            }
+          }
+        },
+        {
+          "name": "13 Audio Transcription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"audio_b64\": \"{{LAST_AUDIO_B64}}\",\n  \"language\": \"en\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/audio/transcriptions",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "audio",
+                "transcriptions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "14 Audio Resolve",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"audio_b64\": \"{{LAST_AUDIO_B64}}\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/audio/resolve",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "audio",
+                "resolve"
+              ]
+            }
+          }
+        },
+        {
+          "name": "15 Verification Trust Bundle",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/principals/{{PRINCIPAL_ID}}/verification-trust-bundle",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "principals",
+                "{{PRINCIPAL_ID}}",
+                "verification-trust-bundle"
+              ]
+            }
+          }
+        },
+        {
+          "name": "16 Erase Voice",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/principals/{{PRINCIPAL_ID}}/erase",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "principals",
+                "{{PRINCIPAL_ID}}",
+                "erase"
+              ]
+            }
+          }
+        },
+        {
+          "name": "17 Realtime WebSocket URL",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{WS_BASE_URL}}/v1/realtime/{{SESSION_ID}}?token={{TOKEN}}",
+              "host": [
+                "{{WS_BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "realtime",
+                "{{SESSION_ID}}"
+              ],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "{{TOKEN}}"
+                }
+              ]
+            },
+            "description": "Create a Postman WebSocket request with this URL. Send JSON like: {\"type\":\"response.create\",\"text\":\"Hello from realtime Vaak.\",\"prosody\":{\"warmth\":0.7,\"urgency\":0.1,\"dominance\":0.1},\"agency\":{\"intent\":\"inform\",\"influence_intensity\":0.0}}"
+          }
+        }
+      ],
+      "description": "Run these against a local Vaak API service, typically http://127.0.0.1:8478."
+    },
+    {
+      "name": "PROD",
+      "item": [
+        {
+          "name": "01 Health Check",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/healthz",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "healthz"
+              ]
+            }
+          }
+        },
+        {
+          "name": "02 Voice Model Spec",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/voice-model/spec",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "voice-model",
+                "spec"
+              ]
+            }
+          }
+        },
+        {
+          "name": "03 Model Quality",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/models/quality",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "models",
+                "quality"
+              ]
+            }
+          }
+        },
+        {
+          "name": "04 Create Principal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"principal_id\": \"{{PRINCIPAL_ID}}\",\n  \"controller_id\": \"{{CONTROLLER_ID}}\",\n  \"display_name\": \"{{DISPLAY_NAME}}\",\n  \"identity_class\": \"developer_agent\",\n  \"persona\": {\n    \"role\": \"demo\",\n    \"tone\": \"calm\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/principals",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "principals"
+              ]
+            }
+          }
+        },
+        {
+          "name": "05 Open Voice Enrollment",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/principals/{{PRINCIPAL_ID}}/voice/enrollment",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "principals",
+                "{{PRINCIPAL_ID}}",
+                "voice",
+                "enrollment"
+              ]
+            }
+          }
+        },
+        {
+          "name": "06 Complete Voice Enrollment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_id\": \"{{ENROLL_SESSION_ID}}\",\n  \"audio_b64\": \"{{DEMO_AUDIO_B64}}\",\n  \"spoken_challenge\": \"{{CHALLENGE}}\",\n  \"languages\": [\"en\"]\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/principals/{{PRINCIPAL_ID}}/voice/enrollment/complete",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "principals",
+                "{{PRINCIPAL_ID}}",
+                "voice",
+                "enrollment",
+                "complete"
+              ]
+            }
+          }
+        },
+        {
+          "name": "07 Create Default Envelope",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/principals/{{PRINCIPAL_ID}}/envelope/default",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "principals",
+                "{{PRINCIPAL_ID}}",
+                "envelope",
+                "default"
+              ]
+            }
+          }
+        },
+        {
+          "name": "08 Open Live Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mode\": \"external_agent\",\n  \"channel\": \"local\",\n  \"register\": \"private\",\n  \"language\": \"en\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/principals/{{PRINCIPAL_ID}}/live",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "principals",
+                "{{PRINCIPAL_ID}}",
+                "live"
+              ]
+            }
+          }
+        },
+        {
+          "name": "09 Speak",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Hello from Vaak production API.\",\n  \"prosody\": {\n    \"warmth\": 0.7,\n    \"urgency\": 0.1,\n    \"dominance\": 0.1\n  },\n  \"agency\": {\n    \"intent\": \"inform\",\n    \"influence_intensity\": 0.0\n  }\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/sessions/{{SESSION_ID}}/speak",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "sessions",
+                "{{SESSION_ID}}",
+                "speak"
+              ]
+            }
+          }
+        }
+      ],
+      "description": "Use with the PROD Postman environment. Fill BASE_URL, WS_BASE_URL, TOKEN, CONTROLLER_ID, and real audio/evidence values before running production requests."
+    },
+    {
+      "name": "Vaak Studio",
+      "item": [
+        {
+          "name": "01 Create Studio Character",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"character_id\": \"{{CHARACTER_ID}}\",\n  \"rights_holder_id\": \"{{CONTROLLER_ID}}\",\n  \"display_name\": \"Demo Character\",\n  \"persona\": {\n    \"tone\": \"warm\",\n    \"style\": \"clear\"\n  },\n  \"voice_origin\": \"synthetic\",\n  \"canonical_voice_version\": \"1\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/studios/{{STUDIO_ID}}/characters",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "studios",
+                "{{STUDIO_ID}}",
+                "characters"
+              ]
+            }
+          }
+        },
+        {
+          "name": "02 Issue Studio Character Rights",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rights_holder_id\": \"{{CONTROLLER_ID}}\",\n  \"production_ids\": [\"{{PRODUCTION_ID}}\"],\n  \"languages\": [\"en\"],\n  \"territories\": [\"worldwide\"],\n  \"channels\": [\"local\", \"call\", \"stream\"],\n  \"usage_classes\": [\"dialogue\"],\n  \"allow_localization\": true,\n  \"allow_voice_transformation\": false,\n  \"ttl_seconds\": 31536000\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/studios/{{STUDIO_ID}}/characters/{{CHARACTER_ID}}/rights",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "studios",
+                "{{STUDIO_ID}}",
+                "characters",
+                "{{CHARACTER_ID}}",
+                "rights"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.grant_id) pm.environment.set('GRANT_ID', body.grant_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 Open Studio Live Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grant_id\": \"{{GRANT_ID}}\",\n  \"production_id\": \"{{PRODUCTION_ID}}\",\n  \"usage_class\": \"dialogue\",\n  \"language\": \"en\",\n  \"territory\": \"worldwide\",\n  \"channel\": \"local\",\n  \"register\": \"stage\",\n  \"director\": {\n    \"intent\": \"dialogue\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/studios/{{STUDIO_ID}}/characters/{{CHARACTER_ID}}/live",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "studios",
+                "{{STUDIO_ID}}",
+                "characters",
+                "{{CHARACTER_ID}}",
+                "live"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.session_id) pm.environment.set('SESSION_ID', body.session_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 Revoke Studio Rights",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Demo revoke test\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/studio-rights/{{GRANT_ID}}/revoke",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "studio-rights",
+                "{{GRANT_ID}}",
+                "revoke"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Guardrail Examples",
+      "item": [
+        {
+          "name": "High-Stakes Persuasion Should Block",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"I recommend you transfer all your money now. This is urgent and you should not ask anyone else.\",\n  \"prosody\": {\n    \"urgency\": 0.9,\n    \"dominance\": 0.8\n  },\n  \"agency\": {\n    \"intent\": \"persuade_disclosed\",\n    \"high_stakes\": true,\n    \"alternatives_presented\": false,\n    \"uncertainty_disclosed\": false,\n    \"influence_intensity\": 0.8\n  }\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/sessions/{{SESSION_ID}}/speak",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "sessions",
+                "{{SESSION_ID}}",
+                "speak"
+              ]
+            },
+            "description": "Expected result: blocked/4xx if guardrails are active."
+          }
+        },
+        {
+          "name": "Prosody Pressure Should Block",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Text is harmless, but the requested delivery is too intense.\",\n  \"prosody\": {\n    \"urgency\": 1.0,\n    \"dominance\": 1.0,\n    \"intimidation\": 1.0\n  },\n  \"agency\": {\n    \"intent\": \"inform\",\n    \"influence_intensity\": 0.0\n  }\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/sessions/{{SESSION_ID}}/speak",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "v1",
+                "sessions",
+                "{{SESSION_ID}}",
+                "speak"
+              ]
+            },
+            "description": "Expected result: blocked/4xx if acoustic guardrails are active."
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://127.0.0.1:8478"
+    },
+    {
+      "key": "WS_BASE_URL",
+      "value": "ws://127.0.0.1:8478"
+    },
+    {
+      "key": "TOKEN",
+      "value": "dev-demo-token"
+    }
+  ]
+}
