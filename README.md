@@ -39,6 +39,18 @@ Real secrets must not be committed. Provider keys such as `BLU_KEY` or Kokoro/Bl
 
 Use this when the Vaak API is already running on the same VM at `127.0.0.1:8478`.
 
+Fast path:
+
+```bash
+git clone https://github.com/onkargaikwadai/vaak_project.git
+cd vaak_project
+
+chmod +x scripts/run_streamlit_vm.sh
+./scripts/run_streamlit_vm.sh
+```
+
+Manual path:
+
 ```bash
 git clone https://github.com/onkargaikwadai/vaak_project.git
 cd vaak_project
@@ -116,3 +128,10 @@ Postman collection/environment files are in:
 postman/
 ```
 
+## Tester Flow
+
+The exact enrollment, TTS, and STT validation flow is documented here:
+
+```text
+docs/Tester_TTS_STT_Runbook.md
+```
