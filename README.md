@@ -1,6 +1,6 @@
 # Vaak Streamlit Tester UI
 
-This repo contains only the Streamlit tester UI and supporting test material for the Vaak API demo. It does not contain the full Vaak backend/product source.
+This repo contains the Streamlit tester UI, supporting test material, and the Vaak backend source under `backend/`.
 
 The UI connects to an already running Vaak API service and lets a tester validate:
 
@@ -11,6 +11,58 @@ The UI connects to an already running Vaak API service and lets a tester validat
 - optional Faster-Whisper STT verification
 - guardrail scenarios
 - proof, disclosure, attestation, transcript, and report flows
+
+## Repo Layout
+
+```text
+streamlit_app.py                  Streamlit tester UI
+requirements.txt                  UI requirements
+backend/                          Vaak backend/API source
+backend/tests/                    Backend test suite
+backend/.env.example              Backend environment template
+docs/Tester_TTS_STT_Runbook.md    Tester UI runbook
+docs/Vaak_Postman_Curl_Collection.md
+postman/                          Postman collection/environment
+scripts/                          UI helper scripts
+```
+
+## Run Backend Locally On VM
+
+Use this if the tester wants to run the Vaak backend from this repo instead of using an already running service.
+
+```bash
+cd ~/vaak_project/backend
+
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+
+cp .env.example .env
+```
+
+Start the Vaak API:
+
+```bash
+uvicorn vaak.server:app --host 127.0.0.1 --port 8478
+```
+
+The package also exposes this console script, but it defaults to port `8080`:
+
+```bash
+vaak-server
+```
+
+Verify:
+
+```bash
+curl -sS http://127.0.0.1:8478/healthz | python3 -m json.tool
+```
+
+Run backend tests:
+
+```bash
+pytest
+```
 
 ## Environment Variables
 

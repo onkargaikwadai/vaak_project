@@ -1,0 +1,19 @@
+services:
+  vaak:
+    build: ..
+    env_file: ../.env
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz')"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+
+# External production boundaries, not fake bundled containers:
+# - vaak-media: streaming ASR/VVM-TTS/VAD/acoustic undertone
+# - agency-integrity: independently operated semantic safety classifier
+# - Corridor/TURN/SIP: realtime media edge
+# - Chrysalis/HSM/identity services: durable trust and status
+# - Atma (optional): separate Digital Twin cognition host using Vaak APIs
